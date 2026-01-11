@@ -9,13 +9,11 @@ int main(int argc, char *argv[]) {
   Disk disk_run;
   
   RecBuffer relCatBuffer(RELCAT_BLOCK);
-  // RecBuffer attrCatBuffer(ATTRCAT_BLOCK);
 
   HeadInfo relCatHeader;
   HeadInfo attrCatHeader;
 
   relCatBuffer.getHeader(&relCatHeader);
-  // attrCatBuffer.getHeader(&attrCatHeader);
 
   for(int i = 0; i < relCatHeader.numEntries; i++)
   {
