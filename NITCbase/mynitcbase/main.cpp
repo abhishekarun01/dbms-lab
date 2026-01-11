@@ -8,33 +8,55 @@ int main(int argc, char *argv[]) {
   /* Initialize the Run Copy of Disk */
   Disk disk_run;
   
-  unsigned char buffer[BLOCK_SIZE]; //BLOCK_SIZE constant with value = 2048
-  Disk::readBlock(buffer, 6000);
+  RecBuffer relCatBuffer(RELCAT_BLOCK);
+  // RecBuffer attrCatBuffer(ATTRCAT_BLOCK);
 
-  char message[] = "hello";
-  memcpy(buffer + 20, message, 6);
-  Disk::writeBlock(buffer, 6000);
+  HeadInfo relCatHeader;
+  HeadInfo attrCatHeader;
 
-  unsigned char buffer2[BLOCK_SIZE];
-  char message2[6];
-  Disk::readBlock(buffer2, 6000);
-  memcpy(message2, buffer2 + 20, 6);
-  std::cout << message2 << '\n';
+  relCatBuffer.getHeader(&relCatHeader);
+  // attrCatBuffer.getHeader(&attrCatHeader);
 
-  char message3[20];
-
-  unsigned char buffer3[BLOCK_SIZE];
-  Disk::readBlock(buffer3, 0);
-  memcpy(message3, buffer3, 20);
-  for(int i = 0; i < 20; i++)
+  for(int i = 0; i < relCatHeader.numEntries; i++)
   {
-    std::cout << (int)(message3[i]);
-    if(i < 19)
+    Attribute relCatRecord[RELCAT_NO_ATTRS];
+    relCatBuffer.getRecord(relCatRecord, i);
+
+    printf("Relation: %s\n", relCatRecord[RELCAT_REL_NAME_INDEX].sVal);
+    int attrBlock = ATTRCAT_BLOCK;
+
+    do  
     {
-      std::cout << ", ";
-    }
-  }
-  std::cout << '\n';
+      RecBuffer attrCatBuffer(attrBlock);
+      attrCatBuffer.getHeader(&attrCatHeader);
+
+      for(int j = 0; j < attrCatHeader.numEntries; j++)
+      {
+        Attribute attrCatRecord[ATTRCAT_NO_ATTRS];
+        attrCatBuffer.getRecord(attrCatRecord, j);
+
+        if(strcmp(attrCatRecord[ATTRCAT_REL_NAME_INDEX].sVal, "Students") == 0 && strcmp(attrCatRecord[ATTRCAT_ATTR_NAME_INDEX].sVal, "Class") == 0)
+        {
+          strcpy(attrCatRecord[ATTRCAT_ATTR_NAME_INDEX].sVal, "Batch");
+          attrCatBuffer.setRecord(attrCatRecord, j);
+        }
+  
+        if(strcmp(attrCatRecord[ATTRCAT_REL_NAME_INDEX].sVal, relCatRecord[RELCAT_REL_NAME_INDEX].sVal) == 0)
+        {
+          const char *attrType = attrCatRecord[ATTRCAT_ATTR_TYPE_INDEX].nVal == NUMBER ? "NUM" : "STR";
+          printf(" %s: %s\n", attrCatRecord[ATTRCAT_ATTR_NAME_INDEX].sVal, attrType);
+        }
+      }
+      
+      attrBlock = attrCatHeader.rblock;
+
+    } while(attrCatHeader.rblock != -1);
+
+    printf("\n");
+
+  } 
+
+  return 0;
 
   // StaticBuffer buffer;
   // OpenRelTable cache;
