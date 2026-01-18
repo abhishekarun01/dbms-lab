@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
 
   
 
-  for(int i = 0; i < 2; i++)
+  for(int i = 0; i < 3; i++)
   {
     RelCatEntry relCatBuffer;
     RelCacheTable::getRelCatEntry(i, &relCatBuffer);
