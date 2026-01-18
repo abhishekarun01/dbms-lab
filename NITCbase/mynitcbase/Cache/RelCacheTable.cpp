@@ -4,6 +4,47 @@
 
 RelCacheEntry* RelCacheTable::relCache[MAX_OPEN];
 
+int RelCacheTable::getSearchIndex(int relId, RecId* searchIndex)
+{
+    if(relId < 0 || relId >= MAX_OPEN)
+    {
+        return E_OUTOFBOUND;
+    }
+
+    if(relCache[relId] == nullptr)
+    {
+        return E_RELNOTOPEN;
+    }
+
+    *searchIndex = relCache[relId]->searchIndex;
+    return SUCCESS;
+}
+
+int RelCacheTable::setSearchIndex(int relId, RecId* searchIndex)
+{
+    if(relId < 0 || relId >= MAX_OPEN)
+    {
+        return E_OUTOFBOUND;
+    }
+
+    if(relCache[relId] == nullptr)
+    {
+        return E_RELNOTOPEN;
+    }
+
+    relCache[relId]->searchIndex = *searchIndex;
+    return SUCCESS;
+}
+
+int RelCacheTable::resetSearchIndex(int relId)
+{
+    RecId searchIndex;
+    searchIndex.block = -1;
+    searchIndex.slot = -1;
+
+    setSearchIndex(relId, &searchIndex);
+}
+
 int RelCacheTable::getRelCatEntry(int relId, RelCatEntry *relCatBuffer)
 {
     if(relId < 0 || relId >= MAX_OPEN)
