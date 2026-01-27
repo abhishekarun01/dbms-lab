@@ -5,7 +5,7 @@ struct BufferMetaInfo StaticBuffer::metainfo[BUFFER_CAPACITY];
 
 StaticBuffer::StaticBuffer()
 {
-    for(int bufferIndex = 0; bufferIndex < BUFFER_CAPACITY - 1; bufferIndex++)
+    for(int bufferIndex = 0; bufferIndex < BUFFER_CAPACITY; bufferIndex++)
     {
         metainfo[bufferIndex].free = true;
     }
@@ -22,7 +22,7 @@ int StaticBuffer::getFreeBuffer(int blockNum)
 
     int allocatedBuffer;
 
-    for(int bufferIndex = 0; bufferIndex < BUFFER_CAPACITY - 1; bufferIndex++)
+    for(int bufferIndex = 0; bufferIndex < BUFFER_CAPACITY; bufferIndex++)
     {
         if(metainfo[bufferIndex].free)
         {
@@ -43,7 +43,7 @@ int StaticBuffer::getBufferNum(int blockNum)
         return E_OUTOFBOUND;
     }
 
-    for(int bufferIndex = 0; bufferIndex < BUFFER_CAPACITY - 1; bufferIndex++)
+    for(int bufferIndex = 0; bufferIndex < BUFFER_CAPACITY; bufferIndex++)
     {
         if(metainfo[bufferIndex].blockNum == blockNum)
         {
