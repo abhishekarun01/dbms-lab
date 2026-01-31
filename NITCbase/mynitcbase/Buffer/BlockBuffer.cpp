@@ -72,7 +72,15 @@ int RecBuffer::getRecord(union Attribute *rec, int slotNum) {
     return SUCCESS;
 }
 
-int RecBuffer::setRecord(union Attribute *rec, int slotNum) {
+int RecBuffer::setRecord(union Attribute *rec, int slotNum) 
+{
+    unsigned char* bufferPtr;
+    int ret = loadBlockAndGetBufferPtr(&bufferPtr);
+    if(ret != SUCCESS)
+    {
+        return ret;
+    }
+
     struct HeadInfo head;
 
     this->getHeader(&head);
@@ -80,16 +88,17 @@ int RecBuffer::setRecord(union Attribute *rec, int slotNum) {
     int attrCount = head.numAttrs;
     int slotCount = head.numSlots;
 
-    unsigned char buffer[BLOCK_SIZE];
-
-    Disk::readBlock(buffer, this->blockNum);
+    if(slotNum < 0 || slotNum >= slotCount)
+    {
+        return E_OUTOFBOUND;
+    }
 
     int recordSize = attrCount * ATTR_SIZE;
-    unsigned char *slotPointer = buffer + HEADER_SIZE + slotCount + (recordSize * slotNum);
+    unsigned char *slotPointer = bufferPtr + HEADER_SIZE + slotCount + (recordSize * slotNum);
 
     memcpy(slotPointer, rec, recordSize);
 
-    Disk::writeBlock(buffer, this->blockNum);
+    StaticBuffer::setDirtyBit(this->blockNum);
 
     return SUCCESS;
 }
@@ -98,15 +107,27 @@ int BlockBuffer::loadBlockAndGetBufferPtr(unsigned char **bufferPtr)
 {
     int bufferNum = StaticBuffer::getBufferNum(this->blockNum);
 
-    if(bufferNum == E_BLOCKNOTINBUFFER) 
+    if(bufferNum != E_BLOCKNOTINBUFFER) 
+    {
+        StaticBuffer::metainfo[bufferNum].timeStamp = 0;
+
+        for(int bufferIndex = 0; bufferIndex < BUFFER_CAPACITY; bufferIndex++)
+        {
+            if(StaticBuffer::metainfo[bufferIndex].free == false)
+            {
+                StaticBuffer::metainfo[bufferIndex].timeStamp++;
+            }
+        }
+    }
+    else
     {
         bufferNum = StaticBuffer::getFreeBuffer(this->blockNum);
 
-        if (bufferNum == E_OUTOFBOUND) 
+        if(bufferNum == E_OUTOFBOUND)
         {
             return E_OUTOFBOUND;
         }
-
+        
         Disk::readBlock(StaticBuffer::blocks[bufferNum], this->blockNum);
     }
 
