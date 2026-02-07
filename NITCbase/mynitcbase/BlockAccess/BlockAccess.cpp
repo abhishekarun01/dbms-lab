@@ -165,6 +165,7 @@ int BlockAccess::renameAttribute(char *relName, char *oldName, char *newName)
         {
             attrToRenameRecId.block = index.block;
             attrToRenameRecId.slot = index.slot;
+            break;
         }
 
         if(strcmp(attrRecord[ATTRCAT_ATTR_NAME_INDEX].sVal, newName) == 0)
