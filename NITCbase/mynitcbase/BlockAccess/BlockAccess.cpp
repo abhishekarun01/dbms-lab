@@ -308,3 +308,149 @@ int BlockAccess::insert(int relId, Attribute *record)
     
     return SUCCESS;
 }
+
+int BlockAccess::search(int relId, Attribute* record, char attrName[ATTR_SIZE], Attribute attrVal, int op)
+{
+    RecId recId;
+
+    recId = BlockAccess::linearSearch(relId, attrName, attrVal, op);
+
+    if(recId.block == -1 && recId.slot == -1)
+    {
+        return E_NOTFOUND;
+    }
+
+    RecBuffer bufferBlock(recId.block);
+    bufferBlock.getRecord(record, recId.slot);
+
+    return SUCCESS;
+}
+
+int BlockAccess::deleteRelation(char relName[ATTR_SIZE])
+{
+    if(strcmp(relName, RELCAT_RELNAME) == 0 || strcmp(relName, ATTRCAT_RELNAME) == 0)
+    {
+        return E_NOTPERMITTED;
+    }
+
+    RelCacheTable::resetSearchIndex(RELCAT_RELID);
+
+    Attribute relNameAttr;
+    strcpy(relNameAttr.sVal, relName);
+
+    RecId recId = BlockAccess::linearSearch(RELCAT_RELID, RELCAT_ATTR_RELNAME, relNameAttr, EQ);
+
+    if(recId.block == -1 && recId.slot == -1)
+    {
+        return E_RELNOTEXIST;
+    }
+
+    Attribute relCatEntryRecord[RELCAT_NO_ATTRS];
+
+    RecBuffer recBuffer(recId.block);
+    recBuffer.getRecord(relCatEntryRecord, recId.slot);
+
+    int firstBlock = relCatEntryRecord[RELCAT_FIRST_BLOCK_INDEX].nVal;
+    int numAttrs = relCatEntryRecord[RELCAT_NO_ATTRIBUTES_INDEX].nVal;
+
+    while(firstBlock != -1)
+    {
+        RecBuffer bufferBlock(firstBlock);
+        
+        struct HeadInfo head;
+        bufferBlock.getHeader(&head);
+
+        firstBlock = head.rblock;
+
+        bufferBlock.releaseBlock();
+    }
+
+    RelCacheTable::resetSearchIndex(ATTRCAT_RELID);
+    int numAttrsDeleted = 0;
+
+    while(true)
+    {
+        RecId attrCatRecId;
+
+        attrCatRecId = BlockAccess::linearSearch(ATTRCAT_RELID, ATTRCAT_RELNAME, relNameAttr, EQ);
+
+        if(attrCatRecId.block == -1 && attrCatRecId.slot == -1)
+        {
+            break;
+        }
+
+        numAttrsDeleted++;
+
+        RecBuffer bufferBlock(attrCatRecId.block);
+        
+        struct HeadInfo head;
+        bufferBlock.getHeader(&head);
+
+        Attribute attrCatRecord[ATTRCAT_NO_ATTRS];
+        bufferBlock.getRecord(attrCatRecord, attrCatRecId.slot);
+
+        int rootBlock = attrCatRecord[ATTRCAT_ROOT_BLOCK_INDEX].nVal;
+
+        unsigned char slotMap[head.numSlots];
+        bufferBlock.getSlotMap(slotMap);
+        slotMap[attrCatRecId.slot] = SLOT_UNOCCUPIED;
+        bufferBlock.setSlotMap(slotMap);
+
+        head.numEntries--;
+        bufferBlock.setHeader(&head);
+
+        if(head.numEntries == 0)
+        {
+            RecBuffer leftBuffer(head.lblock);
+            struct HeadInfo leftBlockHeader;
+            leftBuffer.getHeader(&leftBlockHeader);
+            leftBlockHeader.rblock = head.rblock;
+            leftBuffer.setHeader(&leftBlockHeader);
+
+            if(head.rblock != -1)
+            {
+                RecBuffer rightBuffer(head.rblock);
+                struct HeadInfo rightBlockHeader;
+                leftBuffer.getHeader(&rightBlockHeader);
+                rightBlockHeader.lblock = head.lblock;
+                leftBuffer.setHeader(&rightBlockHeader);
+            }
+            else
+            {
+                RelCatEntry relCatEntry;
+                RelCacheTable::getRelCatEntry(ATTRCAT_RELID, &relCatEntry);
+                relCatEntry.lastBlk = head.lblock;
+                RelCacheTable::setRelCatEntry(ATTRCAT_RELID, &relCatEntry);
+            }
+
+            bufferBlock.releaseBlock();
+        }
+
+        if(rootBlock != -1)
+        {
+
+        }
+    }
+
+    RecBuffer relCatBuffer(RELCAT_BLOCK);
+    struct HeadInfo relCatHeader;
+    relCatBuffer.getHeader(&relCatHeader);
+    relCatHeader.numEntries--;
+    relCatBuffer.setHeader(&relCatHeader);
+
+    unsigned char relCatSlotMap[relCatHeader.numSlots];
+    relCatBuffer.getSlotMap(relCatSlotMap);
+    relCatSlotMap[recId.slot] = SLOT_UNOCCUPIED;
+    relCatBuffer.setSlotMap(relCatSlotMap);
+
+    RelCatEntry relationCatEntry;
+    RelCacheTable::getRelCatEntry(RELCAT_RELID, &relationCatEntry);
+    relationCatEntry.numRecs--;
+    RelCacheTable::setRelCatEntry(RELCAT_RELID, &relationCatEntry);
+
+    RelCacheTable::getRelCatEntry(ATTRCAT_RELID, &relationCatEntry);
+    relationCatEntry.numRecs -= numAttrsDeleted;
+    RelCacheTable::setRelCatEntry(ATTRCAT_RELID, &relationCatEntry);
+
+    return SUCCESS;
+}

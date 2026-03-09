@@ -288,6 +288,27 @@ int BlockBuffer::setBlockType(int blockType)
     return SUCCESS;
 }
 
+void BlockBuffer::releaseBlock()
+{
+    if(this->blockNum < 0 || this->blockNum >= DISK_BLOCKS)
+    {
+        return;
+    }
+    else
+    {
+        int bufferNum = StaticBuffer::getBufferNum(this->blockNum);
+        if(bufferNum == E_BLOCKNOTINBUFFER)
+        {
+            return;
+        }
+        
+        StaticBuffer::metainfo[bufferNum].free = true;
+        StaticBuffer::blockAllocMap[this->blockNum] = UNUSED_BLK;
+        this->blockNum = INVALID_BLOCKNUM;
+        
+    }
+}
+
 int compareAttrs(Attribute attr1, Attribute attr2, int attrType)
 {
     double diff;
