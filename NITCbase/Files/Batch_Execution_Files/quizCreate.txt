@@ -1,0 +1,14 @@
+CREATE TABLE QuizMarks(rollNo STR, name STR, cgpa NUM, quizMarks NUM, location STR);
+OPEN TABLE QuizMarks;
+INSERT INTO QuizMarks VALUES FROM quizmarks.csv;
+SELECT * FROM QuizMarks INTO CGPA8 WHERE cgpa>8;
+OPEN TABLE CGPA8;
+SELECT * FROM CGPA8 INTO EligibleStud WHERE quizMarks>85;
+OPEN TABLE EligibleStud;
+SELECT rollNo,name FROM EligibleStud INTO Kerala WHERE location=Kerala;
+SELECT rollNo,name FROM EligibleStud INTO Gujarat WHERE location=Gujarat;
+SELECT rollNo,name FROM EligibleStud INTO Telangana WHERE location=Telangana;
+CLOSE TABLE EligibleStud;
+CLOSE TABLE CGPA8;
+CLOSE TABLE QuizMarks;
+exit;

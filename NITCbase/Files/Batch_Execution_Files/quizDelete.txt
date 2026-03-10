@@ -1,0 +1,6 @@
+DROP TABLE QuizMarks;
+DROP TABLE CGPA8;
+DROP TABLE EligibleStud;
+DROP TABLE Kerala;
+DROP TABLE Gujarat;
+DROP TABLE Telangana;
