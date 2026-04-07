@@ -1,0 +1,7 @@
+DROP TABLE Toys;
+DROP TABLE ToyColours;
+DROP TABLE ToysForSale;
+DROP TABLE ToysToReorder;
+DROP TABLE ToysCopy;
+DROP TABLE BlueToys;
+exit;

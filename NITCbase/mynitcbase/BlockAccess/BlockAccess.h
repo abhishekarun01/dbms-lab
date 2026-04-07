@@ -10,6 +10,8 @@
 
 class BlockAccess {
  public:
+  static int numLinearComparisons; 
+
   static int search(int relId, Attribute *record, char *attrName, Attribute attrVal, int op);
 
   static int insert(int relId, union Attribute *record);

@@ -73,7 +73,10 @@ int Algebra::select(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE], char attr
     Attribute record[src_nAttrs];
 
     RelCacheTable::resetSearchIndex(srcRelId);
+    AttrCacheTable::resetSearchIndex(srcRelId, attr);
 
+    BPlusTree::numTreeComparisons = 0;
+    BlockAccess::numLinearComparisons = 0;
     while(BlockAccess::search(srcRelId, record, attr, attrVal, op) == SUCCESS)
     {
         ret = BlockAccess::insert(targetRelId, record);
@@ -85,6 +88,8 @@ int Algebra::select(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE], char attr
         }
     }
 
+    printf("Number of Comparisons using Linear Search: %d\n", BlockAccess::numLinearComparisons);
+    printf("Number of Comparisons using BPlus Search: %d\n", BPlusTree::numTreeComparisons);
     Schema::closeRel(targetRel);
 
     return SUCCESS;
