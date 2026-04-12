@@ -297,9 +297,22 @@ int OpenRelTable::closeRel(int relId)
     }
 
     free(RelCacheTable::relCache[relId]);
+    
+    
     for(AttrCacheEntry* entry = AttrCacheTable::attrCache[relId]; entry != nullptr;)
     {
         AttrCacheEntry* nextEntry = entry->next;
+        
+        if(entry->dirty)
+        {
+            Attribute record[ATTRCAT_NO_ATTRS];
+            AttrCacheTable::attrCatEntryToRecord(&(entry->attrCatEntry), record);
+    
+            RecId recId = entry->recId;
+            RecBuffer attrCatBlock(recId.block);
+            attrCatBlock.setRecord(record, recId.slot);
+        }
+
         free(entry);
         entry = nextEntry;
     }
