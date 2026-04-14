@@ -70,7 +70,7 @@ int Frontend::select_attrlist_from_table_where(char relname_source[ATTR_SIZE], c
                                                int attr_count, char attr_list[][ATTR_SIZE],
                                                char attribute[ATTR_SIZE], int op, char value[ATTR_SIZE]) {
   // Algebra::select + Algebra::project??
-  char tempStr[] = TEMP;
+  char tempStr[] = {'t', 'e', 'm', 'p'};
   int response = Algebra::select(relname_source, tempStr, attribute, op, value);
   
   if(response != SUCCESS)
@@ -96,7 +96,7 @@ int Frontend::select_from_join_where(char relname_source_one[ATTR_SIZE], char re
                                      char relname_target[ATTR_SIZE],
                                      char join_attr_one[ATTR_SIZE], char join_attr_two[ATTR_SIZE]) {
   // Algebra::join
-  return SUCCESS;
+  return Algebra::join(relname_source_one, relname_source_two, relname_target, join_attr_one, join_attr_two);
 }
 
 int Frontend::select_attrlist_from_join_where(char relname_source_one[ATTR_SIZE], char relname_source_two[ATTR_SIZE],
@@ -104,7 +104,24 @@ int Frontend::select_attrlist_from_join_where(char relname_source_one[ATTR_SIZE]
                                               char join_attr_one[ATTR_SIZE], char join_attr_two[ATTR_SIZE],
                                               int attr_count, char attr_list[][ATTR_SIZE]) {
   // Algebra::join + project
-  return SUCCESS;
+  char tempStr[] = {'t', 'e', 'm', 'p'};
+  int response = Algebra::join(relname_source_one, relname_source_two, tempStr, join_attr_one, join_attr_two);
+
+  if (response != SUCCESS) {
+    return response;
+  }
+
+  int tempRelId = OpenRelTable::openRel(tempStr);
+  if (tempRelId < 0) {
+    Schema::deleteRel(tempStr);
+    return tempRelId;
+  }
+
+  response = Algebra::project(tempStr, relname_target, attr_count, attr_list);
+
+  OpenRelTable::closeRel(tempRelId);
+  Schema::deleteRel(tempStr);
+  return response;
 }
 
 int Frontend::custom_function(int argc, char argv[][ATTR_SIZE]) {
